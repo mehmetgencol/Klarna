@@ -1,9 +1,19 @@
 from sys import argv
 import traceback
 import sys
+import os
+import boto3
+import json
+import uuid
+
+
+dynamo = boto3.resource('dynamodb')
+table = dynamo.Table('RequestCollector')
 
 
 def ackermann(m, n):
+    if m < 0 or n < 0:
+        return -1
     if m == 0:
         return n + 1
     if n == 0:
@@ -13,16 +23,68 @@ def ackermann(m, n):
 
 
 def factorial(n):
+    if n < 0:
+        return 0
     if n < 2:
         return 1
     return n * factorial(n - 1)
 
 
 def fibonacci(n):
+    if n < 0:
+        return -1
     if n < 2:
         return 1
     return fibonacci(n - 1) + fibonacci(n - 2)
 
+
+
+def respond(err, res=None):
+
+    return {
+        'statusCode': '400' if err else '200',
+        'body': err if err else {"result": res},
+        'headers': {
+            'Content-Type': 'application/json',
+        },
+    }
+
+
+def lambda_handler(event, context):
+    
+    result = -1
+    error = None
+    func = None
+    try:
+        sys.setrecursionlimit(int(sys.maxsize / 10000000000))
+        try:
+            func = event['functionParameters']['funcName']
+        except:
+            func = None
+        try:
+            m = int(event['valueParameters']['m'] if 'm' in event['valueParameters'] else -1)
+        except:
+            m = -1
+        try:
+            n = int(event['valueParameters']['n'])
+        except:
+            n = -1
+        if func == 'fib' and n > 0:
+            result = fibonacci(n)
+        elif func == 'fac' and n > 0:
+            result = factorial(n)
+        elif func == 'ack' and m > 0 and n > 0:
+            result = ackermann(m, n)
+        else:
+            raise ValueError('Argument Error occurred. Func: {}'.format(func))
+    except Exception as ex:
+        result = -1
+        error = ex.args[0] + ("args: " + ", ".join(ex.args[1:]) if len(ex.args) > 1 else "")
+    finally:
+        from datetime import datetime
+        summary = {'function': func, 'result': result, 'time': str(datetime.utcnow()), 'requestID': str(uuid.uuid4())}
+        table.put_item(Item=summary)
+        return respond(error, result)
 
 def prepare_factorial():
     n = -1
