@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+	<div>
+		<form id="klarna-form">
+			<select name="funcName" id="function-selector" class="btn btn-default dropdown-toggle">
+				<option value="ack">Ackermann</option>
+				<option value="fac">Factorial</option>
+				<option value="fib">Fibonacci</option>
+			</select>
+			<div class="row">
+				<div class="form-group col-sm-4">
+					<label for="n">n: </label>
+					<input placeholder="Positive n value" class="form-control" type="number" name="n" id="n">
+				</div>
+			</div>
+			<div class="row">
+				<div class="form-group col-sm-4">
+					<label for="m">m: </label>
+					<input placeholder="Positive m value" class="form-control" type="number" name="m" id="m">
+				</div>
+			</div>
+		</form>
+		<div class="form-group row">
+			<div class="col-sm-10">
+				<button type="submit" class="btn btn-secondary" onclick="submitValues();">Calculate</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	$( document ).ready(function() {
+	    $("#function-selector").change(function () {
+	        var func = this.value;
+	        if (func == "fib" || func == 'fac') {
+	        	$("#m").prop('disabled', true);
+	        }
+	        else {
+	        	$("#m").prop('disabled', null);
+	        }
+
+	    });
+	});
+
+	function submitValues() {
+		$.ajax({
+			url: "https://9i7za4fsd5.execute-api.ca-central-1.amazonaws.com/test/klarnaFunction",
+			type: "post",
+			dataType: "jsonp",
+			crossDomain: true,
+			contentType: 'application/json',
+			data: JSON.stringify( {"funcName" : $("#funcName").val() , "m": $("#m").val(), "n": $("#n").val() } ),
+		}).done(function(data) {
+			console.log(data);
+		});
+	};
+
+</script>
+
+</body>
+
+</html>
